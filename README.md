@@ -70,17 +70,14 @@ Oris is designed to work without modifying your system `PATH`.
 Run the parser using your Python interpreter:
 
 ```bash
-# Basic usage (processes folder 'test' and outputs to 'out')
+# 🚀 Guided Interactive Mode (Recommended for new users)
+python main.py interactive
+
+# 🏥 Check System Status & OCR Health
+python main.py status
+
+# ⚡ Direct Processing (folder/file)
 python main.py process test/ --output out/ --markdown
-
-# Force OCR on all pages (even if digital text exists)
-python main.py process documents/ --force-ocr --ocr-dpi 300
-
-# Use EasyOCR engine instead of Tesseract
-python main.py process test/ --ocr-engine easyocr
-
-# Full list of options
-python main.py process --help
 ```
 
 ### CLI Flags
