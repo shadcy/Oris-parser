@@ -33,6 +33,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
+from rich.prompt import Prompt, Confirm, IntPrompt
 
 __version__ = "1.0.0"
 
@@ -322,6 +323,90 @@ def process_command(
 
     if total_errors:
         sys.exit(2)
+
+
+@cli.command("status")
+def status_command() -> None:
+    """Check the health and configuration of the document parser."""
+    from tesseract_config import tesseract_status
+    
+    console.print("\n[bold cyan]System Status[/bold cyan]")
+    
+    # OCR Status
+    stat = tesseract_status()
+    t_style = "green" if stat["available"] else "red"
+    
+    console.print(f"\n[bold]OCR Engine (Tesseract):[/bold]")
+    console.print(f"  Available     : [{t_style}]{stat['available']}[/{t_style}]")
+    console.print(f"  Binary Path   : [blue]{stat['binary_path']}[/blue]")
+    console.print(f"  Tessdata Pref : [blue]{stat['tessdata_prefix'] or 'Not Set'}[/blue]")
+    console.print(f"  Local Bundle  : {'[green]Yes[/green]' if stat['local_bundle'] else '[yellow]No (Using System)[/yellow]'}")
+    
+    if not stat["available"]:
+        console.print(f"\n[red]Warning:[/red] Tesseract not found. Native PDF/PPTX will work, but OCR fallback will fail.")
+        console.print(f"To fix, place Tesseract in: [blue]{stat['local_bundle_path']}[/blue]")
+
+    # Dependencies
+    console.print(f"\n[bold]Supported Formats:[/bold]")
+    console.print(f"  PDF           : [green]pdfplumber, PyMuPDF[/green]")
+    console.print(f"  PowerPoint    : [green]python-pptx[/green]")
+    console.print("")
+
+
+@cli.command("interactive")
+@click.pass_context
+def interactive_command(ctx: click.Context) -> None:
+    """Launch a guided terminal interface to parse documents."""
+    console.print("\n[bold magenta]Welcome to the Oris Interactive Parser[/bold magenta]")
+    console.print("[dim]This wizard will guide you through the document parsing process.[/dim]\n")
+
+    # 1. Input Path
+    while True:
+        raw_path = Prompt.ask("[bold]Enter the path to a file or directory[/bold]")
+        input_path = Path(raw_path).expanduser().resolve()
+        if input_path.exists():
+            break
+        console.print(f"[red]Error:[/red] Path [yellow]{input_path}[/yellow] does not exist. Try again.")
+
+    # 2. Output Path
+    default_out = "out"
+    raw_out = Prompt.ask("[bold]Enter output directory[/bold]", default=default_out)
+    output_path = Path(raw_out).expanduser().resolve()
+
+    # 3. Features
+    export_markdown = Confirm.ask("Export to Markdown as well as JSON?", default=True)
+    
+    # 4. OCR Settings
+    use_ocr = Confirm.ask("Enable OCR fallback for scanned pages?", default=True)
+    ocr_engine = "tesseract"
+    ocr_dpi = 200
+    force_ocr = False
+    
+    if use_ocr:
+        ocr_engine = Prompt.ask(
+            "Choose OCR Engine", 
+            choices=["tesseract", "easyocr"], 
+            default="tesseract"
+        )
+        ocr_dpi = IntPrompt.ask("OCR Resolution (DPI)", default=200)
+        force_ocr = Confirm.ask("Force OCR on all pages (even digital)?", default=False)
+
+    verbose = Confirm.ask("Enable detailed debug logging?", default=False)
+
+    console.print("\n[bold cyan]Starting process...[/bold cyan]\n")
+    
+    # Forward to the process command
+    ctx.invoke(
+        process_command,
+        input_path=input_path,
+        output=output_path,
+        markdown=export_markdown,
+        ocr_engine=ocr_engine,
+        no_preprocess=False,
+        ocr_dpi=ocr_dpi,
+        force_ocr=force_ocr,
+        verbose=verbose
+    )
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

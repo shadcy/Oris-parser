@@ -57,10 +57,25 @@ It is recommended to use the `radioconda` environment as tested:
 c:\users\asus\radioconda\python.exe -m pip install -r requirements.txt
 ```
 
-### 2. Tesseract OCR (Optional but Recommended)
-Oris is designed to work without modifying your system `PATH`.
-- **Portable Method**: Download the Tesseract binaries and place them in an `Oris/tesseract/` folder. The system will automatically detect `Oris/tesseract/tesseract.exe`.
-- **Standard Method**: Install Tesseract normally. Oris will check common installation paths like `C:\Program Files\Tesseract-OCR\`.
+### 2. Tesseract OCR (Required for Scanned Docs)
+Oris uses Tesseract for OCR fallback. You can set it up in two ways (no PATH changes required for either):
+
+#### Option A: Portable Setup (Recommended for Cleanliness)
+This keeps Tesseract self-contained within the project folder.
+1.  **Download**: Go to [UB Mannheim Tesseract Repository](https://github.com/UB-Mannheim/tesseract/wiki).
+2.  **Get Installer**: Download the latest `.exe` (e.g., `tesseract-ocr-w64-setup-5.x.x.exe`).
+3.  **Extract**: Use [7-Zip](https://www.7-zip.org/) to right-click the `.exe` -> *Extract to "tesseract/"*.
+4.  **Place**: Move that `tesseract/` folder into the `Oris/` root directory.
+    - Your structure should look like: `Oris/tesseract/tesseract.exe`
+5.  **Verify**: Run `python main.py status`. It should show `Local Bundle: Yes`.
+
+#### Option B: Standard Installation
+1.  **Download & Install**: Run the installer from the [same link above](https://github.com/UB-Mannheim/tesseract/wiki).
+2.  **Defaults**: Install to the default path (`C:\Program Files\Tesseract-OCR`).
+3.  **No PATH needed**: Oris automatically checks this default location if no local bundle is found.
+
+> [!TIP]
+> **Language Data**: By default, these installers include English. If you need to parse other languages, make sure to select them during installation or download additional `.traineddata` files into the `tessdata/` folder.
 
 ---
 
@@ -70,17 +85,14 @@ Oris is designed to work without modifying your system `PATH`.
 Run the parser using your Python interpreter:
 
 ```bash
-# Basic usage (processes folder 'test' and outputs to 'out')
+# 🚀 Guided Interactive Mode (Recommended for new users)
+python main.py interactive
+
+# 🏥 Check System Status & OCR Health
+python main.py status
+
+# ⚡ Direct Processing (folder/file)
 python main.py process test/ --output out/ --markdown
-
-# Force OCR on all pages (even if digital text exists)
-python main.py process documents/ --force-ocr --ocr-dpi 300
-
-# Use EasyOCR engine instead of Tesseract
-python main.py process test/ --ocr-engine easyocr
-
-# Full list of options
-python main.py process --help
 ```
 
 ### CLI Flags
